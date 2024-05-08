@@ -1,0 +1,303 @@
+---
+title: "Mini Project 2"
+author: "Claire Burcik, Hannah Park, and Mia Iceland"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Front Matter
+```{r}
+remove(list = ls())
+library(kableExtra)
+library(tidyverse)
+library(readxl)
+
+COD <- read_excel("CODGames2_mp.xlsx")
+
+```
+
+## Task 1 
+
+```{r}
+COD_copy <- na.omit(COD)
+
+rowSums(is.na(COD))
+```
+
+A person should avoid using na.omit on rows in the COD data set because it omits all the rows. After summing up all the NA's in each row, every row within the data set contain at least one NA. Since there is at least one NA in each row, all the rows got removed from the data set when na.omit was used. So, omitting the rows with NAs would cause the data set to be empty. 
+
+## Task 2
+
+### Game Type
+
+The variable GameType is a categorical variable that takes 4 different labels that represent the game modes one can play. The 4 game types are HC-Domination, HC-Hardpoint, HC-Kill Confirmed, and HC-TDM (Team Deathmatch). There is no missing data within the variable.
+
+```{r}
+#Count NA Values
+sum(is.na(COD$GameType))
+
+#Summary Statistic
+GT_table <- table(COD$GameType)
+prop_table <- GT_table / sum(GT_table)
+
+prop_table%>% kbl(col.names = c("Game Type", "Proportions"))%>%
+  kable_styling()
+
+# Visualization
+ggplot(data= COD, mapping = aes(x = GameType))+
+  geom_bar(color = "black", fill = "cyan")+
+  labs(x = "Game Type",
+       y = "Number of Times Played",
+       title = "Frequency of Game Types")
+```
+
+Both the proportion table and visualization show that the player spent most of their time playing the Team Deathmatch game mode compared to the others. With a distribution that is severely skewed left and a proportion of about .934 (a little less than 200 games played) for the game type HC-TDM, it is apparent that the player favors Team Deathmatch over other game mode.
+
+### Total XP
+
+The variable TotalXP is a quantitative variable that takes numeric values that represent the total number of experience points earned in a match. Players can earn XP points in numerous ways including killing the enemy, assisting in an enemy kill, and completing challenges. There are no missing values in this variable.
+
+```{r}
+## Count number of NA values in Damage
+sum(is.na(COD$TotalXP))
+
+## Summary Statistics 
+COD %>%
+  summarize(
+    min = min(TotalXP),
+    median= median(TotalXP),
+    mean = mean(TotalXP),
+    max = max(TotalXP),
+    std = sd(TotalXP)
+  )
+# Visualization
+ggplot(data= COD, mapping = aes(x = TotalXP))+
+  geom_histogram(color = "black", fill = "green")+
+  labs(x = "Total XP",
+       y = "Frequency")
+
+```
+
+The histogram reveals that the player most often earns a total XP value within the range of about 3,500 to about 22,500. The mean value of 11975.4 XP and the median value of 10328 XP fit right into the middle of that range. Additionally, the mean being greater than the median is reflective of the right skewed distribution. The most frequent total XP value earned in a given match is around 9,000 experience points which occurred 35 times. The summary statistics also show that the lowest total XP that the player earned in a game was 1935 and the highest at 43816. 
+
+### Date
+
+The variable 'Date' is a categorical variable that notes the month, day, and year of a match in Call of Duty. The dates range from June 2022 to August 2022. There are no missing values in the variable.
+
+```{r}
+## Count number of NA values in Date
+sum(is.na(COD$Date))
+
+## Summary Statistics 
+COD %>%
+  summarize(
+    min = min(Date),
+    median= median(Date),
+    mean = mean(Date),
+    max = max(Date),
+  )
+
+## Visualization
+COD1 <-
+  COD %>%
+  mutate(Date = as.character(Date),
+         date_split = strsplit(Date, "-"),
+         year = sapply(date_split, `[`, 1),
+         month = sapply(date_split, `[`, 2),
+         day = sapply(date_split, `[`, 3))
+  
+
+ggplot(data= COD1, mapping = aes(x = month)) +
+  geom_bar(color = "black", fill = "pink") +
+  labs(x = "Month in 2022",
+       y = "Frequency")
+```
+
+Both the mean of 07/07/2022, median of 07/04/2022 and visualization show that the distribution of dates in which players play COD is slightly right-skewed. However, the general consensus is that most matches are played during July of 2022 with a frequency of over 100 matches. There is the consideration of constraints this data set has-- was data only sample between the months of June to August of 2022 and does the frequency of player activity change if we had data from the whole year and/or for multiple years?
+
+### Objective Kills
+
+The variable Objective Kills is a quantitative variable in which each kill within the vicinity of a specific location are counted and earns points for a team. Whichever team with the most points wins the game. This only applies to games played in Hardpoint or Domination game mode. There are 200 missing values for this variable.
+
+```{r}
+## Count number of NA values in Objective Kills
+sum(is.na(COD$ObjectiveKills))
+
+## Remove NA values in Objective Kills
+COD2 <-
+  COD %>%
+  filter(!is.na(ObjectiveKills))
+
+## Summary Statistics 
+COD2 %>%
+  summarize(
+    count = n(),
+    min = min(ObjectiveKills),
+    median= median(ObjectiveKills),
+    mean = mean(ObjectiveKills),
+    max = max(ObjectiveKills),
+    SD = sd(ObjectiveKills)
+  )
+
+## Visualization
+ggplot(data= COD2, mapping = aes(x = ObjectiveKills)) +
+  geom_histogram(color = "black", fill = "pink", bins = 15) +
+  labs(x = "Objective Kills",
+       y = "Frequency")
+
+```
+
+From the summary statistics, after removing all NA values, we can see that the there are only 11 games out of 211 observations in which the number of Objective Kills was recorded. A possible conclusion is that Hardpoint and Domination are not very popular game modes. In terms of the frequency table, the histogram is symmetric. The summary statistics conclude a median of 7 and a mean of about 8.45 from a range of 3 to 15 objective kills. This could mean that generally, most teams that play Hardpoint and Domination are paired with other teams of the same skill level because kills made by each team are evenly gained.
+
+
+### XPType 
+
+In COD, XP is experience points. It helps players level up and is given from kills and other events. XPType includes the different types of boosts that would help to increase a player's XP during a round/game. There are multiple ways to recieve these boosts and players are allowed to use these boosts within the game to gain more XP. The variable is qualitative and there are no missing variables within the XPType column.  
+
+```{r}
+## Count number of NA values 
+sum(is.na(COD$XPType))
+
+## Summary Statistics
+XPT_table <- table(COD$XPType)
+prop_table <- XPT_table / sum(XPT_table)
+
+prop_table%>% kbl(col.names = c("XPType", "Proportions"))%>%
+  kable_styling()
+
+ggplot(data= COD, mapping = aes(x = XPType))+
+  geom_bar(color = "black", fill = "lightblue")+
+  labs(x = "XPType",
+       y = "Number of Times a XPType was used",
+       title = "Frequency of XPTypes")
+
+```
+From the visualization, the player used the 10% boost on XP more than the Double XP + 10% boost. The 10% boost was used 129 times by the player while Double XP + 10% was used 82 times. 
+
+### Map1 
+
+In COD, Map1 is the first map the players play in during that round. The maps are the different environments the players play in every round, so the players have varied surroundings. This variable is qualitative and there are 43 missing values within the Map1 column. 
+
+```{r}
+## Count number of NA values 
+sum(is.na(COD$Map1))
+
+COD_Map1 <- COD %>%
+  filter(Map1 != "NA")
+
+## Summary Statistics
+Map1_table <- table(COD_Map1$Map1)
+prop_table <- Map1_table / sum(Map1_table)
+
+prop_table%>% kbl(col.names = c("Map1_table", "Proportions"))%>%
+  kable_styling()
+
+ggplot(data= COD_Map1, mapping = aes(x = Map1))+
+  geom_bar(color = "black", fill = "lightgreen")+
+  labs(x = "Map1 Types",
+       y = "Number of Times a Map was used",
+       title = "Frequency of Map1")+
+  theme(axis.text.x = element_text(angle = 90)) 
+
+```
+
+From this visualization, the player did not have a favorite map but did play around many of the maps. The most popular map was 'The Pines' and the least used map was 'Ruah'. Removing the NAs made the graph easier to read and the y axis clearer. 'The Pines' map was played 12 times, while the 'Ruah' map was played 1 time by the player. 
+
+## Task 3
+
+```{r}
+COD <-
+  COD %>%
+  #Split string into two
+  mutate (Result2 = strsplit(Result, "-"))
+
+proportions <- function(df){
+  countw <- 0
+  countl <- 0
+  countd <- 0
+  for(i in 1:nrow(df)){
+    #If first number > second number
+    if (as.numeric(df$Result2[[i]][1]) > as.numeric(df$Result2[[i]][2])){
+      #add t count of wins
+      countw <- countw + 1
+    }
+    #if first number < second number
+    else if (as.numeric(df$Result2[[i]][1]) < as.numeric(df$Result2[[i]][2])){
+      #add to count of losses
+      countl <- countl + 1
+    }
+    #if first number = second number
+    else{
+      #add to count of draws
+      countd <- countd + 1
+    }
+  }
+  prop_wins <- countw / nrow(df)
+  prop_losses <- countl / nrow(df)
+  prop_draws <- countd / nrow(df)
+  return(lst(prop_wins, prop_losses, prop_draws))
+}
+
+proportions(COD)
+```
+
+## Task 4
+
+How does the variable 'Eliminations' affect whether the player's team won the game?
+
+```{r}
+#Convert Result to indicator named outcome (Yes = 1, No = 0) 
+COD <-
+  COD %>%
+  #Split string into two
+  mutate (Result2 = strsplit(Result, "-"))
+
+  for(i in 1:nrow(COD)) {
+    
+  if (as.numeric(COD$Result2[[i]][1]) > as.numeric(COD$Result2[[i]][2])) {
+    COD$outcome[i] <- 1
+  } 
+    else {
+    COD$outcome[i] <- 0
+  }
+}
+
+#Build model with indicator as the response
+model1 <-
+  glm(outcome ~ Eliminations, family = binomial, data = COD)
+
+#Display summary of model
+summary(model1)
+
+```
+
+The estimated probability form is given by:
+
+$$\hat{p}_i=\frac{e^{-0.78078 + 0.06295x_{i,elimination}}}{1+e^{-0.78078 + 0.06295x_{i,elimination}}}$$
+
+Exponentiation: 
+
+$$e^\hat{β_i}={e^{0.06295}}={1.06497}$$
+
+As the Elimination score increases by 1 point, we expect the odds of the player winning the game to change by a factor of 1.065. 
+In other words, as the Elimination score increases by 1 point, we expect the odds of the player winning the game to increase by 6.5%.
+
+## Group Contributions
+
+### Claire
+
+- Game Type and Total XP variable Exploration
+- Task 3
+
+### Mia
+- Date and Objective Kills variable Exploration
+- Task 4
+
+### Hannah 
+
+- XPType and Map1 variable Exploration 
+- Task 1 
